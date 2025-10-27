@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}لوحة التحكم{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>مرحباً بك، {{ user }} ({{ role }})</h2>
+    <hr>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card text-white bg-info mb-3">
+                <div class="card-header">القواطر المسجلة</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ truck_count }}</h5>
+                    <p class="card-text">إجمالي عدد القواطر في الخدمة.</p>
+                    <a href="{{ url_for('trucks') }}" class="btn btn-light">عرض التفاصيل</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">الرحلات النشطة</div>
+                <div class="card-body">
+                    <h5 class="card-title">0</h5>
+                    <p class="card-text">عدد الرحلات الجارية حالياً.</p>
+                    <a href="#" class="btn btn-light">إدارة الرحلات</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card text-white bg-warning mb-3">
+                <div class="card-header">صيانة قادمة</div>
+                <div class="card-body">
+                    <h5 class="card-title">0</h5>
+                    <p class="card-text">عدد القواطر التي تحتاج صيانة عاجلة.</p>
+                    <a href="#" class="btn btn-light">عرض الصيانة</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

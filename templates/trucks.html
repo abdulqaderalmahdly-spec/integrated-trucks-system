@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}إدارة القواطر{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>قائمة القواطر</h2>
+    <a href="#" class="btn btn-success mb-3">إضافة قاطرة جديدة</a>
+    
+    {% if trucks %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>رقم اللوحة</th>
+                <th>الموديل</th>
+                <th>السنة</th>
+                <th>الحالة</th>
+                <th>السائق</th>
+                <th>إجراءات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for truck in trucks %}
+            <tr>
+                <td>{{ truck.plate_number }}</td>
+                <td>{{ truck.model }}</td>
+                <td>{{ truck.year }}</td>
+                <td><span class="badge bg-{{ 'success' if truck.status == 'In Service' else 'warning' }}">{{ truck.status }}</span></td>
+                <td>{{ truck.driver_id if truck.driver_id else 'غير محدد' }}</td>
+                <td>
+                    <a href="#" class="btn btn-sm btn-primary">عرض</a>
+                    <a href="#" class="btn btn-sm btn-danger">حذف</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info">لا توجد قواطر مسجلة حالياً.</div>
+    {% endif %}
+</div>
+{% endblock %}
