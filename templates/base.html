@@ -132,6 +132,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'drivers_list' %}active{% endif %}" href="{{ url_for('drivers_list') }}">
+                        <i class="bi bi-person-badge"></i> حسابات السائقين
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('add_maintenance') }}">
                         <i class="bi bi-tools"></i> تسجيل صيانة
                     </a>

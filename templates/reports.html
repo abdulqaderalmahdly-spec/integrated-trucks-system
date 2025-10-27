@@ -4,9 +4,9 @@
 {% block content %}
 <div class="container mt-5">
     <div class="d-flex justify-content-end mb-3 no-print">
-        <button class="btn btn-primary" onclick="window.print()">
-            <i class="bi bi-printer"></i> طباعة التقرير
-        </button>
+        <a href="{{ url_for('reports_pdf') }}" class="btn btn-primary" target="_blank">
+            <i class="bi bi-file-earmark-pdf"></i> تصدير PDF
+        </a>
     </div>
     <h2>التقارير المالية والتشغيلية</h2>
     <hr>

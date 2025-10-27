@@ -1,57 +1,45 @@
--- جدول المستخدمين (Users) - مخصص للمديرين والمحاسبين والمشرفين فقط
+-- جدول المستخدمين (للمديرين والمحاسبين فقط)
 CREATE TABLE IF NOT EXISTS users (
     username TEXT PRIMARY KEY,
     password TEXT NOT NULL,
     full_name TEXT NOT NULL,
-    role TEXT NOT NULL, -- الأدوار: admin, manager, accountant
+    role TEXT NOT NULL, -- admin, manager, accountant
     signature TEXT
 );
 
--- جدول السائقين (Drivers) - مخصص لبيانات السائقين فقط
+-- جدول السائقين (بيانات السائقين فقط، بدون حساب دخول)
 CREATE TABLE IF NOT EXISTS drivers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     full_name TEXT NOT NULL,
     phone TEXT,
     license_number TEXT,
     address TEXT,
-    salary REAL -- الراتب الشهري
+    salary REAL DEFAULT 0.0
 );
 
--- جدول القواطر (Trucks) - تم تعديل ربط السائق ليكون بجدول drivers
+-- جدول معاملات السائقين (مدين/دائن)
+CREATE TABLE IF NOT EXISTS driver_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    driver_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    type TEXT NOT NULL, -- DEBIT (مدين - سلفة/خصم) أو CREDIT (دائن - راتب/مكافأة)
+    amount REAL NOT NULL,
+    description TEXT,
+    FOREIGN KEY (driver_id) REFERENCES drivers (id)
+);
+
+-- جدول القواطر
 CREATE TABLE IF NOT EXISTS trucks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    plate_number TEXT NOT NULL UNIQUE,
-    model TEXT,
-    year INTEGER,
-    status TEXT NOT NULL, -- مثل: In Service, Maintenance, Out of Service
-    driver_id INTEGER,
-    FOREIGN KEY (driver_id) REFERENCES drivers(id)
+    plate_number TEXT UNIQUE NOT NULL,
+    model TEXT NOT NULL,
+    year INTEGER NOT NULL,
+    status TEXT NOT NULL, -- In Service, Maintenance, Out of Service
+    driver_id INTEGER, -- السائق المخصص (اختياري)
+    FOREIGN KEY (driver_id) REFERENCES drivers (id)
 );
 
--- جدول الصيانة (Maintenance)
-CREATE TABLE IF NOT EXISTS maintenance (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    truck_id INTEGER NOT NULL,
-    date DATE NOT NULL,
-    type TEXT, -- نوع الصيانة (مثل: زيت، إطارات، محرك)
-    description TEXT,
-    cost REAL,
-    FOREIGN KEY (truck_id) REFERENCES trucks(id)
-);
-
--- جدول الوقود (Fuel)
-CREATE TABLE IF NOT EXISTS fuel (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    truck_id INTEGER NOT NULL,
-    date DATE NOT NULL,
-    liters REAL NOT NULL,
-    cost REAL NOT NULL,
-    station TEXT,
-    odometer INTEGER,
-    FOREIGN KEY (truck_id) REFERENCES trucks(id)
-);
-
--- جدول الشحنات (Shipments) - تم تعديل ربط السائق ليكون بجدول drivers
+-- جدول الشحنات
 CREATE TABLE IF NOT EXISTS shipments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     truck_id INTEGER NOT NULL,
@@ -59,31 +47,55 @@ CREATE TABLE IF NOT EXISTS shipments (
     origin TEXT NOT NULL,
     destination TEXT NOT NULL,
     load_weight REAL,
-    revenue REAL,
-    start_date DATE NOT NULL,
-    end_date DATE,
-    status TEXT NOT NULL, -- مثل: Pending, In Transit, Delivered
-    FOREIGN KEY (truck_id) REFERENCES trucks(id),
-    FOREIGN KEY (driver_id) REFERENCES drivers(id)
+    revenue REAL NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT,
+    status TEXT NOT NULL, -- In Transit, Delivered, Cancelled
+    FOREIGN KEY (truck_id) REFERENCES trucks (id),
+    FOREIGN KEY (driver_id) REFERENCES drivers (id)
 );
 
--- جدول المصاريف (Expenses)
+-- جدول المصاريف
 CREATE TABLE IF NOT EXISTS expenses (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    expense_date DATE NOT NULL,
-    category TEXT NOT NULL, -- مثل: Fuel, Toll, Repair, Salary
+    expense_date TEXT NOT NULL,
+    category TEXT NOT NULL,
     amount REAL NOT NULL,
     description TEXT,
     truck_id INTEGER,
-    FOREIGN KEY (truck_id) REFERENCES trucks(id)
+    driver_id INTEGER, -- السائق الذي دفع المصروف (لربطه بحسابه)
+    FOREIGN KEY (truck_id) REFERENCES trucks (id),
+    FOREIGN KEY (driver_id) REFERENCES drivers (id)
 );
 
--- جدول سجل المعاملات (Audit Log)
+-- جدول الصيانة
+CREATE TABLE IF NOT EXISTS maintenance (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    truck_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    type TEXT NOT NULL,
+    cost REAL NOT NULL,
+    description TEXT,
+    FOREIGN KEY (truck_id) REFERENCES trucks (id)
+);
+
+-- جدول الوقود
+CREATE TABLE IF NOT EXISTS fuel (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    truck_id INTEGER NOT NULL,
+    date TEXT NOT NULL,
+    liters REAL NOT NULL,
+    cost REAL NOT NULL,
+    station TEXT,
+    odometer INTEGER,
+    FOREIGN KEY (truck_id) REFERENCES trucks (id)
+);
+
+-- سجل المعاملات (Audit Log)
 CREATE TABLE IF NOT EXISTS audit_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    timestamp TEXT NOT NULL,
     user_id TEXT NOT NULL,
-    action TEXT NOT NULL, -- نوع العملية: ADD_TRUCK, ADD_SHIPMENT, LOGIN, etc.
-    details TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(username)
+    action TEXT NOT NULL,
+    details TEXT
 );

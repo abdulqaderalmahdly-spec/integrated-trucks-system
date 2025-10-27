@@ -1,11 +1,13 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, make_response
 import hashlib
 from functools import wraps
 from datetime import datetime
 import csv
 import io
+# استيراد مكتبة PDF
+from xhtml2pdf import pisa
 
 # --- إعدادات التطبيق ---
 app = Flask(__name__, static_folder='static')
@@ -62,6 +64,27 @@ def role_required(allowed_roles):
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
+def render_pdf(html_content, filename):
+    """تحويل محتوى HTML إلى ملف PDF قابل للتحميل"""
+    # تهيئة ملف الإخراج
+    result_file = io.BytesIO()
+
+    # تحويل HTML إلى PDF
+    pisa_status = pisa.CreatePDF(
+        html_content,                # محتوى HTML
+        dest=result_file,            # ملف الإخراج
+        encoding='utf-8'             # الترميز
+    )
+
+    # إذا لم يكن هناك خطأ في التحويل
+    if not pisa_status.err:
+        response = make_response(result_file.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename={filename}.pdf'
+        return response
+    
+    return "حدث خطأ أثناء إنشاء ملف PDF", 500
 
 # --- المسارات (Routes) ---
 
@@ -301,6 +324,7 @@ def add_expense():
     """إضافة مصاريف"""
     conn = get_db_connection()
     trucks_list = conn.execute('SELECT id, plate_number FROM trucks').fetchall()
+    drivers_list = conn.execute('SELECT id, full_name FROM drivers').fetchall()
     conn.close()
     
     today = datetime.now().strftime('%Y-%m-%d')
@@ -311,12 +335,20 @@ def add_expense():
         amount = request.form['amount']
         description = request.form['description']
         truck_id = request.form.get('truck_id')
+        driver_id = request.form.get('driver_id') # حقل جديد
         
         try:
             conn = get_db_connection()
-            conn.execute('INSERT INTO expenses (expense_date, category, amount, description, truck_id) VALUES (?, ?, ?, ?, ?)',
-                         (expense_date, category, amount, description, truck_id if truck_id else None))
+            conn.execute('INSERT INTO expenses (expense_date, category, amount, description, truck_id, driver_id) VALUES (?, ?, ?, ?, ?, ?)',
+                         (expense_date, category, amount, description, truck_id if truck_id else None, driver_id if driver_id else None))
             conn.commit()
+            
+            # تسجيل المصروف كمعاملة دائنة للسائق (المرحلة 3)
+            if driver_id:
+                conn.execute('INSERT INTO driver_transactions (driver_id, date, type, amount, description) VALUES (?, ?, ?, ?, ?)',
+                             (driver_id, expense_date, 'CREDIT', amount, f'مصروف مدفوع: {category}'))
+                conn.commit()
+            
             conn.close()
             log_action(session['username'], 'ADD_EXPENSE', f'تسجيل مصروف: {category} بمبلغ {amount}')
             flash('تم تسجيل المصروف بنجاح.', 'success')
@@ -325,7 +357,7 @@ def add_expense():
             flash(f'حدث خطأ: {e}', 'danger')
             
     categories = ['وقود', 'رسوم طرق', 'صيانة', 'رواتب', 'أخرى']
-    return render_template('add_expense.html', trucks=trucks_list, categories=categories, today=today)
+    return render_template('add_expense.html', trucks=trucks_list, categories=categories, today=today, drivers=drivers_list)
 
 # --- مسارات التقارير ---
 
@@ -355,10 +387,49 @@ def reports():
         'total_revenue': total_revenue,
         'total_expenses': total_expenses,
         'net_profit': total_revenue - total_expenses,
-        'active_shipments': active_shipments
+        'active_shipments': active_shipments,
+        'report_title': 'التقرير المالي والتشغيلي العام',
+        'generated_by': session.get('full_name', 'غير معروف'),
+        'generated_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
     
     return render_template('reports.html', data=report_data)
+
+@app.route('/reports/pdf')
+@login_required
+@role_required(['admin', 'manager', 'accountant'])
+def reports_pdf():
+    """توليد التقرير المالي كملف PDF"""
+    conn = get_db_connection()
+    
+    # جلب نفس بيانات التقرير
+    total_revenue = conn.execute('SELECT SUM(revenue) FROM shipments WHERE status = "Delivered"').fetchone()[0] or 0
+    total_expenses = conn.execute('SELECT SUM(amount) FROM expenses').fetchone()[0] or 0
+    
+    active_shipments = conn.execute('''
+        SELECT s.origin, s.destination, t.plate_number, d.full_name as driver_name 
+        FROM shipments s
+        JOIN trucks t ON s.truck_id = t.id
+        JOIN drivers d ON s.driver_id = d.id
+        WHERE s.status = "In Transit"
+    ''').fetchall()
+    
+    conn.close()
+    
+    report_data = {
+        'total_revenue': total_revenue,
+        'total_expenses': total_expenses,
+        'net_profit': total_revenue - total_expenses,
+        'active_shipments': active_shipments,
+        'report_title': 'التقرير المالي والتشغيلي العام',
+        'generated_by': session.get('full_name', 'غير معروف'),
+        'generated_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    }
+    
+    # استخدام قالب مخصص للطباعة
+    html = render_template('reports_pdf.html', data=report_data)
+    
+    return render_pdf(html, 'التقرير_المالي_العام')
 
 # --- مسارات سجل المعاملات (Audit Log) ---
 
@@ -418,6 +489,69 @@ def export_audit_log():
         headers={'Content-Disposition': f'attachment;filename=audit-log-{datetime.now().strftime("%Y-%m-%d")}.csv'}
     )
 
+
+# --- مسارات حسابات السائقين ---
+
+@app.route('/drivers/account/<int:driver_id>')
+@login_required
+@role_required(['admin', 'accountant'])
+def driver_account(driver_id):
+    """عرض كشف حساب السائق"""
+    conn = get_db_connection()
+    driver = conn.execute('SELECT * FROM drivers WHERE id = ?', (driver_id,)).fetchone()
+    
+    if not driver:
+        flash('السائق غير موجود.', 'danger')
+        return redirect(url_for('index'))
+        
+    transactions = conn.execute('SELECT * FROM driver_transactions WHERE driver_id = ? ORDER BY date DESC, id DESC', (driver_id,)).fetchall()
+    
+    # حساب الرصيد
+    balance = 0
+    for t in transactions:
+        if t['type'] == 'CREDIT':
+            balance += t['amount']
+        elif t['type'] == 'DEBIT':
+            balance -= t['amount']
+            
+    conn.close()
+    
+    return render_template('driver_account.html', driver=driver, transactions=transactions, balance=balance)
+
+@app.route('/drivers/add_transaction/<int:driver_id>', methods=['GET', 'POST'])
+@login_required
+@role_required(['admin', 'accountant'])
+def add_driver_transaction(driver_id):
+    """إضافة معاملة مالية للسائق (سلفة، مكافأة)"""
+    conn = get_db_connection()
+    driver = conn.execute('SELECT * FROM drivers WHERE id = ?', (driver_id,)).fetchone()
+    conn.close()
+    
+    if not driver:
+        flash('السائق غير موجود.', 'danger')
+        return redirect(url_for('index'))
+        
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    if request.method == 'POST':
+        date = request.form['date']
+        type = request.form['type'] # DEBIT (سلفة) أو CREDIT (مكافأة)
+        amount = request.form['amount']
+        description = request.form['description']
+        
+        try:
+            conn = get_db_connection()
+            conn.execute('INSERT INTO driver_transactions (driver_id, date, type, amount, description) VALUES (?, ?, ?, ?, ?)',
+                         (driver_id, date, type, amount, description))
+            conn.commit()
+            conn.close()
+            log_action(session['username'], 'ADD_DRIVER_TRANS', f'إضافة معاملة {type} للسائق {driver["full_name"]} بمبلغ {amount}')
+            flash('تم تسجيل المعاملة بنجاح.', 'success')
+            return redirect(url_for('driver_account', driver_id=driver_id))
+        except Exception as e:
+            flash(f'حدث خطأ: {e}', 'danger')
+            
+    return render_template('add_driver_transaction.html', driver=driver, today=today)
 
 # --- تشغيل التطبيق ---
 if __name__ == '__main__':

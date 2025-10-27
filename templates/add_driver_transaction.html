@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}إضافة معاملة للسائق {{ driver.full_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>إضافة معاملة مالية للسائق: {{ driver.full_name }}</h2>
+    <p class="text-muted">لإضافة سلفة (مدين) أو مكافأة (دائن).</p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('add_driver_transaction', driver_id=driver.id) }}">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="date" class="form-label">التاريخ</label>
+                <input type="date" class="form-control" id="date" name="date" value="{{ today }}" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="type" class="form-label">نوع المعاملة</label>
+                <select class="form-select" id="type" name="type" required>
+                    <option value="DEBIT">مدين (سلفة/خصم) - ينقص رصيد السائق</option>
+                    <option value="CREDIT">دائن (مكافأة/إضافة) - يزيد رصيد السائق</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="amount" class="form-label">المبلغ</label>
+                <input type="number" step="0.01" class="form-control" id="amount" name="amount" required>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <label for="description" class="form-label">الوصف</label>
+            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">تسجيل المعاملة</button>
+    </form>
+</div>
+{% endblock %}

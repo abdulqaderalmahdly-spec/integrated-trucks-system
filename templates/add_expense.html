@@ -40,14 +40,23 @@
         </div>
         
         <div class="mb-3">
-            <label for="truck_id" class="form-label">القاطرة المرتبطة (اختياري)</label>
+                   <label for="truck_id" class="form-label">القاطرة المخصصة (اختياري)</label>
             <select class="form-select" id="truck_id" name="truck_id">
-                <option value="">لا يوجد قاطرة محددة</option>
+                <option value="">لا يوجد قاطرة مخصصة</option>
                 {% for truck in trucks %}
-                <option value="{{ truck.id }}">{{ truck.plate_number }} ({{ truck.model }})</option>
+                <option value="{{ truck.id }}">{{ truck.plate_number }}</option>
                 {% endfor %}
             </select>
         </div>
+        <div class="col-md-6 mb-3">
+            <label for="driver_id" class="form-label">السائق الذي دفع المصروف (اختياري)</label>
+            <select class="form-select" id="driver_id" name="driver_id">
+                <option value="">لم يدفعه سائق</option>
+                {% for driver in drivers %}
+                <option value="{{ driver.id }}">{{ driver.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>        </div>
         
         <button type="submit" class="btn btn-primary">تسجيل المصروف</button>
     </form>

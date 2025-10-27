@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ data.report_title }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+            @bottom-right {
+                content: "الصفحة " counter(page) " من " counter(pages);
+                font-size: 10pt;
+            }
+        }
+        body {
+            font-family: 'Arial', 'DejaVu Sans', sans-serif; /* يجب أن يكون الخط يدعم العربية */
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #333;
+        }
+        h1, h2, h3 {
+            text-align: center;
+            color: #1a237e;
+            border-bottom: 2px solid #1a237e;
+            padding-bottom: 5px;
+            margin-top: 20px;
+        }
+        .header-info {
+            text-align: right;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .header-info p {
+            margin: 5px 0;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .summary-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: right;
+            font-weight: bold;
+        }
+        .summary-table td:first-child {
+            background-color: #f2f2f2;
+            width: 30%;
+            font-weight: normal;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .table th, .table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: right;
+        }
+        .table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .signature {
+            margin-top: 50px;
+            text-align: left;
+            border-top: 1px dashed #333;
+            width: 30%;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ data.report_title }}</h1>
+
+    <div class="header-info">
+        <p><strong>تاريخ التقرير:</strong> {{ data.generated_date }}</p>
+        <p><strong>تم إعداده بواسطة:</strong> {{ data.generated_by }}</p>
+    </div>
+
+    <h2>ملخص الأداء المالي</h2>
+    <table class="summary-table">
+        <tr>
+            <td>إجمالي الإيرادات</td>
+            <td style="color: green;">{{ data.total_revenue | round(2) }}</td>
+        </tr>
+        <tr>
+            <td>إجمالي المصروفات</td>
+            <td style="color: red;">{{ data.total_expenses | round(2) }}</td>
+        </tr>
+        <tr>
+            <td>صافي الربح</td>
+            <td style="color: blue;">{{ data.net_profit | round(2) }}</td>
+        </tr>
+    </table>
+
+    <h2>الشحنات النشطة حالياً (In Transit)</h2>
+    {% if data.active_shipments %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>من</th>
+                <th>إلى</th>
+                <th>القاطرة</th>
+                <th>السائق</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for shipment in data.active_shipments %}
+            <tr>
+                <td>{{ shipment.origin }}</td>
+                <td>{{ shipment.destination }}</td>
+                <td>{{ shipment.plate_number }}</td>
+                <td>{{ shipment.driver_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #666;">لا توجد شحنات نشطة حالياً.</p>
+    {% endif %}
+
+    <div class="signature">
+        <p>توقيع المستخدم المسؤول:</p>
+        <p>{{ data.generated_by }}</p>
+    </div>
+</body>
+</html>
