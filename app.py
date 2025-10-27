@@ -80,7 +80,7 @@ def login():
         if user:
             session['logged_in'] = True
             session['username'] = user['username']
-            session['full_name'] = user['full_name'] # تم إضافة هذا السطر
+            session['full_name'] = user['full_name']
             session['role'] = user['role']
             flash(f'مرحباً بك، {user["full_name"]}!', 'success')
             return redirect(url_for('index'))
@@ -95,7 +95,7 @@ def logout():
     """تسجيل الخروج"""
     session.pop('logged_in', None)
     session.pop('username', None)
-    session.pop('full_name', None) # تم إضافة هذا السطر
+    session.pop('full_name', None)
     session.pop('role', None)
     flash('تم تسجيل الخروج بنجاح.', 'info')
     return redirect(url_for('login'))
@@ -214,6 +214,8 @@ def add_expense():
     trucks_list = conn.execute('SELECT id, plate_number FROM trucks').fetchall()
     conn.close()
     
+    today = datetime.now().strftime('%Y-%m-%d')
+    
     if request.method == 'POST':
         expense_date = request.form['expense_date']
         category = request.form['category']
@@ -233,7 +235,7 @@ def add_expense():
             flash(f'حدث خطأ: {e}', 'danger')
             
     categories = ['وقود', 'رسوم طرق', 'صيانة', 'رواتب', 'أخرى']
-    return render_template('add_expense.html', trucks=trucks_list, categories=categories)
+    return render_template('add_expense.html', trucks=trucks_list, categories=categories, today=today)
 
 # --- مسارات التقارير ---
 
