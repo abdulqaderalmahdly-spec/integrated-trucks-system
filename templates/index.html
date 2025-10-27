@@ -2,52 +2,70 @@
 {% block title %}لوحة التحكم{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2>مرحباً بك، {{ user }} ({{ role }})</h2>
+<div class="mt-4">
+    <h2 class="mb-4">مرحباً بك، {{ session.full_name }}</h2>
+    <p class="text-muted">دورك في النظام: **{{ session.role }}**</p>
     <hr>
     
     <div class="row">
-        <div class="col-md-4">
-            <div class="card text-white bg-info mb-3">
-                <div class="card-header">القواطر المسجلة</div>
+        <!-- بطاقة القواطر -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-info h-100">
                 <div class="card-body">
-                    <h5 class="card-title">{{ truck_count }}</h5>
-                    <p class="card-text">إجمالي عدد القواطر في الخدمة.</p>
-                    <a href="{{ url_for('trucks') }}" class="btn btn-light">عرض التفاصيل</a>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title text-info">القواطر المسجلة</h5>
+                        <i class="bi bi-truck-flatbed fs-2 text-info"></i>
+                    </div>
+                    <p class="card-text fs-1 fw-bold">{{ truck_count }}</p>
+                    <a href="{{ url_for('trucks') }}" class="btn btn-sm btn-outline-info">عرض التفاصيل</a>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-4">
-            <div class="card text-white bg-success mb-3">
-                <div class="card-header">الرحلات النشطة</div>
+        <!-- بطاقة الرحلات النشطة -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-success h-100">
                 <div class="card-body">
-                    <h5 class="card-title">{{ shipment_count }}</h5>
-                    <p class="card-text">عدد الرحلات الجارية حالياً.</p>
-                    <a href="{{ url_for('add_shipment') }}" class="btn btn-light">إضافة شحنة</a>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title text-success">الرحلات النشطة</h5>
+                        <i class="bi bi-geo-alt fs-2 text-success"></i>
+                    </div>
+                    <p class="card-text fs-1 fw-bold">{{ shipment_count }}</p>
+                    <a href="{{ url_for('add_shipment') }}" class="btn btn-sm btn-outline-success">إضافة شحنة جديدة</a>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-4">
-            <div class="card text-white bg-warning mb-3">
-                <div class="card-header">المصروفات</div>
+        <!-- بطاقة التقارير -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm border-primary h-100">
                 <div class="card-body">
-                    <h5 class="card-title">0</h5>
-                    <p class="card-text">إجمالي المصروفات لهذا الشهر.</p>
-                    <a href="{{ url_for('add_expense') }}" class="btn btn-light">إضافة مصروف</a>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title text-primary">التقارير المالية</h5>
+                        <i class="bi bi-graph-up fs-2 text-primary"></i>
+                    </div>
+                    <p class="card-text fs-1 fw-bold">عرض</p>
+                    <a href="{{ url_for('reports') }}" class="btn btn-sm btn-outline-primary">عرض التقارير</a>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <a href="{{ url_for('add_driver') }}" class="btn btn-outline-primary w-100">إضافة سائق جديد</a>
+    <h3 class="mt-4 mb-3">إجراءات سريعة</h3>
+    <div class="row">
+        {% if session.role in ['admin', 'manager'] %}
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('add_truck') }}" class="btn btn-primary w-100"><i class="bi bi-plus-lg"></i> قاطرة جديدة</a>
         </div>
-        <div class="col-md-4">
-            <a href="{{ url_for('reports') }}" class="btn btn-outline-info w-100">عرض التقارير</a>
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('add_driver') }}" class="btn btn-secondary w-100"><i class="bi bi-person-plus"></i> سائق جديد</a>
         </div>
+        {% endif %}
+        {% if session.role in ['admin', 'accountant'] %}
+        <div class="col-md-3 mb-3">
+            <a href="{{ url_for('add_expense') }}" class="btn btn-warning w-100"><i class="bi bi-cash"></i> تسجيل مصروف</a>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

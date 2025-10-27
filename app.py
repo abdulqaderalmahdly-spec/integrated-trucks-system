@@ -63,7 +63,7 @@ def index():
     truck_count = conn.execute('SELECT COUNT(*) FROM trucks').fetchone()[0]
     shipment_count = conn.execute('SELECT COUNT(*) FROM shipments WHERE status = "In Transit"').fetchone()[0]
     conn.close()
-    return render_template('index.html', user=session['username'], role=session['role'], truck_count=truck_count, shipment_count=shipment_count)
+    return render_template('index.html', truck_count=truck_count, shipment_count=shipment_count)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -80,7 +80,7 @@ def login():
         if user:
             session['logged_in'] = True
             session['username'] = user['username']
-            session['full_name'] = user['full_name']
+            session['full_name'] = user['full_name'] # تم إضافة هذا السطر
             session['role'] = user['role']
             flash(f'مرحباً بك، {user["full_name"]}!', 'success')
             return redirect(url_for('index'))
@@ -95,7 +95,7 @@ def logout():
     """تسجيل الخروج"""
     session.pop('logged_in', None)
     session.pop('username', None)
-    session.pop('full_name', None)
+    session.pop('full_name', None) # تم إضافة هذا السطر
     session.pop('role', None)
     flash('تم تسجيل الخروج بنجاح.', 'info')
     return redirect(url_for('login'))
