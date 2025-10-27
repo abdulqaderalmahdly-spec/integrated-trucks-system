@@ -119,7 +119,12 @@ def logout():
 def trucks():
     """عرض قائمة القواطر"""
     conn = get_db_connection()
-    trucks = conn.execute('SELECT * FROM trucks').fetchall()
+    # ربط القاطرة باسم السائق
+    trucks = conn.execute('''
+        SELECT t.*, d.full_name as driver_name 
+        FROM trucks t 
+        LEFT JOIN drivers d ON t.driver_id = d.id
+    ''').fetchall()
     conn.close()
     return render_template('trucks.html', trucks=trucks)
 
@@ -128,16 +133,21 @@ def trucks():
 @role_required(['admin', 'manager'])
 def add_truck():
     """إضافة قاطرة جديدة"""
+    conn = get_db_connection()
+    drivers_list = conn.execute('SELECT id, full_name FROM drivers').fetchall()
+    conn.close()
+    
     if request.method == 'POST':
         plate_number = request.form['plate_number']
         model = request.form['model']
         year = request.form['year']
         status = request.form['status']
+        driver_id = request.form.get('driver_id')
         
         try:
             conn = get_db_connection()
-            conn.execute('INSERT INTO trucks (plate_number, model, year, status) VALUES (?, ?, ?, ?)',
-                         (plate_number, model, year, status))
+            conn.execute('INSERT INTO trucks (plate_number, model, year, status, driver_id) VALUES (?, ?, ?, ?, ?)',
+                         (plate_number, model, year, status, driver_id if driver_id else None))
             conn.commit()
             conn.close()
             log_action(session['username'], 'ADD_TRUCK', f'إضافة قاطرة جديدة: {plate_number} - {model}')
@@ -148,20 +158,17 @@ def add_truck():
         except Exception as e:
             flash(f'حدث خطأ: {e}', 'danger')
             
-    return render_template('add_truck.html')
+    return render_template('add_truck.html', drivers=drivers_list)
 
-# --- مسارات إدارة المستخدمين (السائقين) ---
+# --- مسارات إدارة السائقين (البيانات فقط) ---
 
 @app.route('/drivers/add', methods=['GET', 'POST'])
 @login_required
 @role_required(['admin', 'manager'])
 def add_driver():
-    """إضافة سائق جديد (كمستخدم بدور 'user')"""
+    """إضافة بيانات سائق جديد (بدون حساب دخول)"""
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
         full_name = request.form['full_name']
-        signature = request.form.get('signature', full_name)
         phone = request.form.get('phone')
         license_number = request.form.get('license_number')
         address = request.form.get('address')
@@ -169,15 +176,13 @@ def add_driver():
         
         try:
             conn = get_db_connection()
-            conn.execute('INSERT INTO users (username, password, full_name, role, signature, phone, license_number, address, salary) VALUES (?, ?, ?, "user", ?, ?, ?, ?, ?)',
-                         (username, hash_password(password), full_name, signature, phone, license_number, address, salary))
+            conn.execute('INSERT INTO drivers (full_name, phone, license_number, address, salary) VALUES (?, ?, ?, ?, ?)',
+                         (full_name, phone, license_number, address, salary))
             conn.commit()
             conn.close()
-            log_action(session['username'], 'ADD_DRIVER', f'إضافة سائق جديد: {full_name} ({username})')
+            log_action(session['username'], 'ADD_DRIVER_DATA', f'إضافة بيانات سائق جديد: {full_name}')
             flash(f'تمت إضافة السائق ({full_name}) بنجاح.', 'success')
-            return redirect(url_for('index')) # يمكن توجيهه لصفحة قائمة السائقين لاحقاً
-        except sqlite3.IntegrityError:
-            flash('اسم المستخدم موجود بالفعل.', 'danger')
+            return redirect(url_for('index'))
         except Exception as e:
             flash(f'حدث خطأ: {e}', 'danger')
             
@@ -191,13 +196,13 @@ def add_driver():
 def add_shipment():
     """إضافة شحنة جديدة"""
     conn = get_db_connection()
-    trucks_list = conn.execute('SELECT id, plate_number FROM trucks WHERE status = "In Service"').fetchall()
-    drivers_list = conn.execute('SELECT username, full_name FROM users WHERE role = "user"').fetchall()
+    trucks_list = conn.execute('SELECT id, plate_number, driver_id FROM trucks WHERE status = "In Service"').fetchall()
+    drivers_list = conn.execute('SELECT id, full_name FROM drivers').fetchall()
     conn.close()
     
     if request.method == 'POST':
         truck_id = request.form['truck_id']
-        driver_username = request.form['driver_username']
+        driver_id = request.form['driver_id'] # تم تغيير driver_username إلى driver_id
         origin = request.form['origin']
         destination = request.form['destination']
         load_weight = request.form['load_weight']
@@ -206,8 +211,8 @@ def add_shipment():
         
         try:
             conn = get_db_connection()
-            conn.execute('INSERT INTO shipments (truck_id, driver_username, origin, destination, load_weight, revenue, start_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, "In Transit")',
-                         (truck_id, driver_username, origin, destination, load_weight, revenue, start_date))
+            conn.execute('INSERT INTO shipments (truck_id, driver_id, origin, destination, load_weight, revenue, start_date, status) VALUES (?, ?, ?, ?, ?, ?, ?, "In Transit")',
+                         (truck_id, driver_id, origin, destination, load_weight, revenue, start_date))
             conn.commit()
             conn.close()
             log_action(session['username'], 'ADD_SHIPMENT', f'بدء شحنة جديدة: من {origin} إلى {destination}، القاطرة: {truck_id}')
@@ -337,10 +342,10 @@ def reports():
     
     # تقرير الشحنات النشطة
     active_shipments = conn.execute('''
-        SELECT s.origin, s.destination, t.plate_number, u.full_name as driver_name 
+        SELECT s.origin, s.destination, t.plate_number, d.full_name as driver_name 
         FROM shipments s
         JOIN trucks t ON s.truck_id = t.id
-        JOIN users u ON s.driver_username = u.username
+        JOIN drivers d ON s.driver_id = d.id
         WHERE s.status = "In Transit"
     ''').fetchall()
     
@@ -419,6 +424,6 @@ if __name__ == '__main__':
     if not os.path.exists(DATABASE):
         print("⚠️ قاعدة البيانات غير موجودة. جاري التهيئة...")
         init_db()
-        print("✅ تم تهيئة قاعدة البيانات. يرجى تشغيل add_users.py لإضافة المستخدمين.")
+        print("✅ تم تهيئة قاعدة البيانات. يرجى تشغيل add_users.py لإضافة المستخدمين والسائقين.")
     
     app.run(host='0.0.0.0', port=5000)

@@ -51,6 +51,45 @@
         #content {
             margin-right: var(--sidebar-width);
             padding: 20px;
+            transition: margin-right 0.3s;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                min-height: auto;
+                padding-top: 0;
+            }
+            #content {
+                margin-right: 0;
+                padding-top: 10px;
+            }
+            .sidebar-header {
+                padding: 10px 15px;
+            }
+            .nav-link {
+                text-align: center;
+            }
+            .nav {
+                flex-direction: row !important;
+                flex-wrap: wrap;
+                justify-content: center;
+                padding-bottom: 10px;
+            }
+            .nav-item {
+                margin: 5px;
+            }
+            .nav-item a {
+                padding: 5px 10px !important;
+                font-size: 0.8rem;
+            }
+            .nav-item i {
+                display: block;
+                margin-bottom: 3px;
+            }
         }
 
         .sidebar-header {
@@ -72,12 +111,15 @@
     <div id="sidebar">
         <div class="sidebar-header">
             <h4>🚛 نظام القواطر</h4>
+            <button class="btn btn-sm btn-outline-light d-md-none" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-nav" aria-controls="sidebar-nav" aria-expanded="true" aria-label="Toggle navigation">
+                <i class="bi bi-list"></i> القائمة
+            </button>
             {% if session.logged_in %}
                 <small class="text-muted">{{ session.full_name }} ({{ session.role }})</small>
             {% endif %}
         </div>
         
-        <ul class="nav flex-column px-3">
+        <ul class="nav flex-column px-3 collapse show" id="sidebar-nav">
             {% if session.logged_in %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">

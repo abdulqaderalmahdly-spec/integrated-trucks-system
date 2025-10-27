@@ -23,11 +23,11 @@
             </select>
         </div>
         <div class="mb-3">
-            <label for="driver_username" class="form-label">السائق المسؤول</label>
-            <select class="form-select" id="driver_username" name="driver_username" required>
+            <label for="driver_id" class="form-label">السائق المسؤول</label>
+            <select class="form-select" id="driver_id" name="driver_id" required>
                 <option value="">اختر سائق</option>
                 {% for driver in drivers %}
-                <option value="{{ driver.username }}">{{ driver.full_name }} ({{ driver.username }})</option>
+                <option value="{{ driver.id }}">{{ driver.full_name }}</option>
                 {% endfor %}
             </select>
         </div>

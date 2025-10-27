@@ -33,6 +33,16 @@
                 <option value="Out of Service">خارج الخدمة</option>
             </select>
         </div>
+        
+        <div class="mb-3">
+            <label for="driver_id" class="form-label">السائق المخصص (اختياري)</label>
+            <select class="form-select" id="driver_id" name="driver_id">
+                <option value="">لا يوجد سائق مخصص</option>
+                {% for driver in drivers %}
+                <option value="{{ driver.id }}">{{ driver.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <button type="submit" class="btn btn-primary">إضافة القاطرة</button>
     </form>
 </div>
