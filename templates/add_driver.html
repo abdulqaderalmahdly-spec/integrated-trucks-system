@@ -14,22 +14,51 @@
     {% endwith %}
     
     <form method="POST" action="{{ url_for('add_driver') }}">
-        <div class="mb-3">
-            <label for="full_name" class="form-label">الاسم الكامل للسائق</label>
-            <input type="text" class="form-control" id="full_name" name="full_name" required>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="full_name" class="form-label">الاسم الكامل للسائق</label>
+                <input type="text" class="form-control" id="full_name" name="full_name" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="phone" class="form-label">رقم الجوال</label>
+                <input type="tel" class="form-control" id="phone" name="phone">
+            </div>
         </div>
-        <div class="mb-3">
-            <label for="username" class="form-label">اسم المستخدم (للدخول)</label>
-            <input type="text" class="form-control" id="username" name="username" required>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="license_number" class="form-label">رقم الرخصة</label>
+                <input type="text" class="form-control" id="license_number" name="license_number">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="salary" class="form-label">الراتب الشهري</label>
+                <input type="number" step="0.01" class="form-control" id="salary" name="salary">
+            </div>
         </div>
+        
         <div class="mb-3">
-            <label for="password" class="form-label">كلمة المرور</label>
-            <input type="password" class="form-control" id="password" name="password" required>
+            <label for="address" class="form-label">العنوان</label>
+            <textarea class="form-control" id="address" name="address" rows="2"></textarea>
         </div>
+        
+        <hr>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="username" class="form-label">اسم المستخدم (للدخول)</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="password" class="form-label">كلمة المرور</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+        </div>
+        
         <div class="mb-3">
             <label for="signature" class="form-label">التوقيع (اختياري)</label>
             <input type="text" class="form-control" id="signature" name="signature">
         </div>
+        
         <button type="submit" class="btn btn-primary">إضافة السائق</button>
     </form>
 </div>

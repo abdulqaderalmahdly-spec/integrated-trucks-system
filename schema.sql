@@ -4,7 +4,12 @@ CREATE TABLE IF NOT EXISTS users (
     password TEXT NOT NULL,
     full_name TEXT NOT NULL,
     role TEXT NOT NULL, -- الأدوار: admin, manager, accountant, user
-    signature TEXT
+    signature TEXT,
+    -- حقول السائق الجديدة
+    phone TEXT,
+    license_number TEXT,
+    address TEXT,
+    salary REAL -- الراتب الشهري
 );
 
 -- جدول القواطر (Trucks)

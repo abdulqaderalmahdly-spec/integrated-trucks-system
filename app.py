@@ -149,11 +149,15 @@ def add_driver():
         password = request.form['password']
         full_name = request.form['full_name']
         signature = request.form.get('signature', full_name)
+        phone = request.form.get('phone')
+        license_number = request.form.get('license_number')
+        address = request.form.get('address')
+        salary = request.form.get('salary')
         
         try:
             conn = get_db_connection()
-            conn.execute('INSERT INTO users (username, password, full_name, role, signature) VALUES (?, ?, ?, "user", ?)',
-                         (username, hash_password(password), full_name, signature))
+            conn.execute('INSERT INTO users (username, password, full_name, role, signature, phone, license_number, address, salary) VALUES (?, ?, ?, "user", ?, ?, ?, ?, ?)',
+                         (username, hash_password(password), full_name, signature, phone, license_number, address, salary))
             conn.commit()
             conn.close()
             flash(f'تمت إضافة السائق ({full_name}) بنجاح.', 'success')
