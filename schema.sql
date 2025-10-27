@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS trucks (
     model TEXT,
     year INTEGER,
     status TEXT NOT NULL, -- مثل: In Service, Maintenance, Out of Service
-    driver_id INTEGER,
+    driver_id TEXT,
     FOREIGN KEY (driver_id) REFERENCES users(username)
 );
 
@@ -28,5 +28,29 @@ CREATE TABLE IF NOT EXISTS maintenance (
     FOREIGN KEY (truck_id) REFERENCES trucks(id)
 );
 
--- يمكنك إضافة المزيد من الجداول هنا (مثل: الرحلات، العملاء، إلخ)
--- ...
+-- جدول الشحنات (Shipments)
+CREATE TABLE IF NOT EXISTS shipments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    truck_id INTEGER NOT NULL,
+    driver_username TEXT NOT NULL,
+    origin TEXT NOT NULL,
+    destination TEXT NOT NULL,
+    load_weight REAL,
+    revenue REAL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    status TEXT NOT NULL, -- مثل: Pending, In Transit, Delivered
+    FOREIGN KEY (truck_id) REFERENCES trucks(id),
+    FOREIGN KEY (driver_username) REFERENCES users(username)
+);
+
+-- جدول المصاريف (Expenses)
+CREATE TABLE IF NOT EXISTS expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    expense_date DATE NOT NULL,
+    category TEXT NOT NULL, -- مثل: Fuel, Toll, Repair, Salary
+    amount REAL NOT NULL,
+    description TEXT,
+    truck_id INTEGER,
+    FOREIGN KEY (truck_id) REFERENCES trucks(id)
+);

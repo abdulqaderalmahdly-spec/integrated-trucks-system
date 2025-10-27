@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}إضافة شحنة جديدة{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>إضافة شحنة جديدة</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('add_shipment') }}">
+        <div class="mb-3">
+            <label for="truck_id" class="form-label">القاطرة المخصصة</label>
+            <select class="form-select" id="truck_id" name="truck_id" required>
+                <option value="">اختر قاطرة</option>
+                {% for truck in trucks %}
+                <option value="{{ truck.id }}">{{ truck.plate_number }} (موديل {{ truck.model }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="driver_username" class="form-label">السائق المسؤول</label>
+            <select class="form-select" id="driver_username" name="driver_username" required>
+                <option value="">اختر سائق</option>
+                {% for driver in drivers %}
+                <option value="{{ driver.username }}">{{ driver.full_name }} ({{ driver.username }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="origin" class="form-label">نقطة الانطلاق</label>
+                <input type="text" class="form-control" id="origin" name="origin" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="destination" class="form-label">الوجهة</label>
+                <input type="text" class="form-control" id="destination" name="destination" required>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="load_weight" class="form-label">وزن الحمولة (طن)</label>
+                <input type="number" step="0.01" class="form-control" id="load_weight" name="load_weight" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="revenue" class="form-label">الإيراد المتوقع</label>
+                <input type="number" step="0.01" class="form-control" id="revenue" name="revenue" required>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">بدء الشحنة</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}التقارير{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>التقارير المالية والتشغيلية</h2>
+    <hr>
+
+    <div class="row mb-5">
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">إجمالي الإيرادات</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ data.total_revenue | round(2) }}</h5>
+                    <p class="card-text">الإيرادات المحققة من الشحنات المكتملة.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card text-white bg-danger mb-3">
+                <div class="card-header">إجمالي المصروفات</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ data.total_expenses | round(2) }}</h5>
+                    <p class="card-text">المصروفات المسجلة.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">صافي الربح</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ data.net_profit | round(2) }}</h5>
+                    <p class="card-text">الإيرادات - المصروفات.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <h3>الشحنات النشطة (In Transit)</h3>
+    {% if data.active_shipments %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>من</th>
+                <th>إلى</th>
+                <th>القاطرة</th>
+                <th>السائق</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for shipment in data.active_shipments %}
+            <tr>
+                <td>{{ shipment.origin }}</td>
+                <td>{{ shipment.destination }}</td>
+                <td>{{ shipment.plate_number }}</td>
+                <td>{{ shipment.driver_name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info">لا توجد شحنات نشطة حالياً.</div>
+    {% endif %}
+</div>
+{% endblock %}

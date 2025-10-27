@@ -28,7 +28,13 @@
                         <a class="nav-link" href="{{ url_for('trucks') }}">القواطر</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">الصيانة</a>
+                        <a class="nav-link" href="{{ url_for('add_shipment') }}">الشحنات</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('add_expense') }}">المصاريف</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('reports') }}">التقارير</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav">

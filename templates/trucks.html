@@ -4,7 +4,7 @@
 {% block content %}
 <div class="container mt-5">
     <h2>قائمة القواطر</h2>
-    <a href="#" class="btn btn-success mb-3">إضافة قاطرة جديدة</a>
+    <a href="{{ url_for('add_truck') }}" class="btn btn-success mb-3">إضافة قاطرة جديدة</a>
     
     {% if trucks %}
     <table class="table table-striped">

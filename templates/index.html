@@ -22,22 +22,31 @@
             <div class="card text-white bg-success mb-3">
                 <div class="card-header">الرحلات النشطة</div>
                 <div class="card-body">
-                    <h5 class="card-title">0</h5>
+                    <h5 class="card-title">{{ shipment_count }}</h5>
                     <p class="card-text">عدد الرحلات الجارية حالياً.</p>
-                    <a href="#" class="btn btn-light">إدارة الرحلات</a>
+                    <a href="{{ url_for('add_shipment') }}" class="btn btn-light">إضافة شحنة</a>
                 </div>
             </div>
         </div>
         
         <div class="col-md-4">
             <div class="card text-white bg-warning mb-3">
-                <div class="card-header">صيانة قادمة</div>
+                <div class="card-header">المصروفات</div>
                 <div class="card-body">
                     <h5 class="card-title">0</h5>
-                    <p class="card-text">عدد القواطر التي تحتاج صيانة عاجلة.</p>
-                    <a href="#" class="btn btn-light">عرض الصيانة</a>
+                    <p class="card-text">إجمالي المصروفات لهذا الشهر.</p>
+                    <a href="{{ url_for('add_expense') }}" class="btn btn-light">إضافة مصروف</a>
                 </div>
             </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <a href="{{ url_for('add_driver') }}" class="btn btn-outline-primary w-100">إضافة سائق جديد</a>
+        </div>
+        <div class="col-md-4">
+            <a href="{{ url_for('reports') }}" class="btn btn-outline-info w-100">عرض التقارير</a>
         </div>
     </div>
 </div>

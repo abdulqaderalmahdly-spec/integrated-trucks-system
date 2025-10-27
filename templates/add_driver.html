@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}إضافة سائق جديد{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>إضافة سائق جديد</h2>
+    <p>سيتم إضافة السائق بدور "مستخدم عادي" (user).</p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('add_driver') }}">
+        <div class="mb-3">
+            <label for="full_name" class="form-label">الاسم الكامل للسائق</label>
+            <input type="text" class="form-control" id="full_name" name="full_name" required>
+        </div>
+        <div class="mb-3">
+            <label for="username" class="form-label">اسم المستخدم (للدخول)</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">كلمة المرور</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+        <div class="mb-3">
+            <label for="signature" class="form-label">التوقيع (اختياري)</label>
+            <input type="text" class="form-control" id="signature" name="signature">
+        </div>
+        <button type="submit" class="btn btn-primary">إضافة السائق</button>
+    </form>
+</div>
+{% endblock %}

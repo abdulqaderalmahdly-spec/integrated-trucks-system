@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}إضافة قاطرة جديدة{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>إضافة قاطرة جديدة</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('add_truck') }}">
+        <div class="mb-3">
+            <label for="plate_number" class="form-label">رقم اللوحة</label>
+            <input type="text" class="form-control" id="plate_number" name="plate_number" required>
+        </div>
+        <div class="mb-3">
+            <label for="model" class="form-label">الموديل</label>
+            <input type="text" class="form-control" id="model" name="model" required>
+        </div>
+        <div class="mb-3">
+            <label for="year" class="form-label">سنة الصنع</label>
+            <input type="number" class="form-control" id="year" name="year" required>
+        </div>
+        <div class="mb-3">
+            <label for="status" class="form-label">الحالة</label>
+            <select class="form-select" id="status" name="status" required>
+                <option value="In Service">في الخدمة</option>
+                <option value="Maintenance">صيانة</option>
+                <option value="Out of Service">خارج الخدمة</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">إضافة القاطرة</button>
+    </form>
+</div>
+{% endblock %}
