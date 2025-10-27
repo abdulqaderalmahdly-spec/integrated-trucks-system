@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}تسجيل وقود{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>تسجيل وقود جديد</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('add_fuel') }}">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="truck_id" class="form-label">القاطرة</label>
+                <select class="form-select" id="truck_id" name="truck_id" required>
+                    <option value="">اختر قاطرة</option>
+                    {% for truck in trucks %}
+                    <option value="{{ truck.id }}">{{ truck.plate_number }} ({{ truck.model }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="date" class="form-label">تاريخ التعبئة</label>
+                <input type="date" class="form-control" id="date" name="date" value="{{ today }}" required>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label for="liters" class="form-label">كمية الوقود (لتر)</label>
+                <input type="number" step="0.01" class="form-control" id="liters" name="liters" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="cost" class="form-label">التكلفة الإجمالية</label>
+                <input type="number" step="0.01" class="form-control" id="cost" name="cost" required>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label for="odometer" class="form-label">قراءة العداد (كم)</label>
+                <input type="number" step="1" class="form-control" id="odometer" name="odometer">
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <label for="station" class="form-label">اسم المحطة</label>
+            <input type="text" class="form-control" id="station" name="station">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">تسجيل الوقود</button>
+    </form>
+</div>
+{% endblock %}

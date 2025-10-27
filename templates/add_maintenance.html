@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}تسجيل صيانة{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>تسجيل صيانة جديدة</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('add_maintenance') }}">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="truck_id" class="form-label">القاطرة</label>
+                <select class="form-select" id="truck_id" name="truck_id" required>
+                    <option value="">اختر قاطرة</option>
+                    {% for truck in trucks %}
+                    <option value="{{ truck.id }}">{{ truck.plate_number }} ({{ truck.model }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="date" class="form-label">تاريخ الصيانة</label>
+                <input type="date" class="form-control" id="date" name="date" value="{{ today }}" required>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="type" class="form-label">نوع الصيانة</label>
+                <select class="form-select" id="type" name="type" required>
+                    <option value="">اختر نوع الصيانة</option>
+                    <option value="زيت وفلاتر">زيت وفلاتر</option>
+                    <option value="إطارات">إطارات</option>
+                    <option value="محرك">محرك</option>
+                    <option value="هيكل">هيكل</option>
+                    <option value="أخرى">أخرى</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="cost" class="form-label">التكلفة (بالعملة المحلية)</label>
+                <input type="number" step="0.01" class="form-control" id="cost" name="cost" required>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <label for="description" class="form-label">الوصف</label>
+            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">تسجيل الصيانة</button>
+    </form>
+</div>
+{% endblock %}

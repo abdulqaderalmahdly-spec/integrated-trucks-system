@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}سجل المعاملات{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>📋 سجل المعاملات (Audit Log)</h2>
+    <p class="text-muted">سجل بجميع العمليات الهامة التي تمت في النظام.</p>
+    <hr>
+    
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" id="search-audit" class="form-control" placeholder="ابحث بنوع العملية، المستخدم، التاريخ..." onkeyup="searchAuditLog(this.value)">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+            </div>
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-info" onclick="exportAuditLog()">
+                <i class="bi bi-file-earmark-spreadsheet"></i> تصدير Excel (CSV)
+            </button>
+        </div>
+    </div>
+
+    <div id="audit-log-table">
+        <div class="alert alert-info">جاري تحميل البيانات...</div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', loadAuditLog);
+
+    async function loadAuditLog() {
+        const tableContainer = document.getElementById('audit-log-table');
+        tableContainer.innerHTML = '<div class="alert alert-info">جاري تحميل البيانات...</div>';
+
+        try {
+            const response = await fetch('/api/audit-log');
+            const data = await response.json();
+            displayAuditLog(data);
+        } catch (error) {
+            tableContainer.innerHTML = '<div class="alert alert-danger">فشل في تحميل سجل المعاملات.</div>';
+            console.error('Error loading audit log:', error);
+        }
+    }
+
+    function displayAuditLog(logs) {
+        const tableContainer = document.getElementById('audit-log-table');
+        if (logs.length === 0) {
+            tableContainer.innerHTML = '<div class="alert alert-warning">لا توجد معاملات مسجلة.</div>';
+            return;
+        }
+
+        let tableHTML = `
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>المستخدم</th>
+                        <th>العملية</th>
+                        <th>التفاصيل</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        logs.forEach(log => {
+            tableHTML += `
+                <tr>
+                    <td>${new Date(log.timestamp).toLocaleString('ar-EG')}</td>
+                    <td>${log.user_id}</td>
+                    <td><span class="badge bg-secondary">${log.action}</span></td>
+                    <td>${log.details}</td>
+                </tr>
+            `;
+        });
+
+        tableHTML += `
+                </tbody>
+            </table>
+        `;
+        tableContainer.innerHTML = tableHTML;
+    }
+
+    async function searchAuditLog(query) {
+        const tableContainer = document.getElementById('audit-log-table');
+        if (query.length < 2) {
+            loadAuditLog(); // إعادة تحميل الكل إذا كان البحث فارغًا
+            return;
+        }
+        
+        tableContainer.innerHTML = '<div class="alert alert-info">جاري البحث...</div>';
+
+        try {
+            const response = await fetch(`/api/audit-log/search?q=${query}`);
+            const data = await response.json();
+            displayAuditLog(data);
+        } catch (error) {
+            tableContainer.innerHTML = '<div class="alert alert-danger">فشل في البحث.</div>';
+            console.error('Error searching audit log:', error);
+        }
+    }
+
+    async function exportAuditLog() {
+        try {
+            const response = await fetch('/api/export/audit-log');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            alert('✅ تم تصدير سجل المعاملات بنجاح.');
+        } catch (error) {
+            alert('❌ فشل في تصدير البيانات. تأكد من أن لديك صلاحية المدير.');
+            console.error('Error exporting audit log:', error);
+        }
+    }
+</script>
+{% endblock %}

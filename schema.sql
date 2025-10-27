@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS users (
     full_name TEXT NOT NULL,
     role TEXT NOT NULL, -- الأدوار: admin, manager, accountant, user
     signature TEXT,
-    -- حقول السائق الجديدة
     phone TEXT,
     license_number TEXT,
     address TEXT,
@@ -28,8 +27,21 @@ CREATE TABLE IF NOT EXISTS maintenance (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     truck_id INTEGER NOT NULL,
     date DATE NOT NULL,
+    type TEXT, -- نوع الصيانة (مثل: زيت، إطارات، محرك)
     description TEXT,
     cost REAL,
+    FOREIGN KEY (truck_id) REFERENCES trucks(id)
+);
+
+-- جدول الوقود (Fuel)
+CREATE TABLE IF NOT EXISTS fuel (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    truck_id INTEGER NOT NULL,
+    date DATE NOT NULL,
+    liters REAL NOT NULL,
+    cost REAL NOT NULL,
+    station TEXT,
+    odometer INTEGER,
     FOREIGN KEY (truck_id) REFERENCES trucks(id)
 );
 
@@ -58,4 +70,14 @@ CREATE TABLE IF NOT EXISTS expenses (
     description TEXT,
     truck_id INTEGER,
     FOREIGN KEY (truck_id) REFERENCES trucks(id)
+);
+
+-- جدول سجل المعاملات (Audit Log)
+CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    user_id TEXT NOT NULL,
+    action TEXT NOT NULL, -- نوع العملية: ADD_TRUCK, ADD_SHIPMENT, LOGIN, etc.
+    details TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(username)
 );

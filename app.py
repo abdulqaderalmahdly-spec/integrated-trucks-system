@@ -1,12 +1,14 @@
 import os
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 import hashlib
 from functools import wraps
 from datetime import datetime
+import csv
+import io
 
 # --- إعدادات التطبيق ---
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 app.secret_key = 'your_secret_key_for_session_management' # يجب تغييرها في بيئة الإنتاج
 DATABASE = os.path.join(app.root_path, 'instance', 'trucks.db')
 
@@ -29,6 +31,14 @@ def init_db():
     conn = get_db_connection()
     with app.open_resource('schema.sql', mode='r') as f:
         conn.executescript(f.read())
+    conn.close()
+
+def log_action(user_id, action, details):
+    """تسجيل العملية في سجل المعاملات"""
+    conn = get_db_connection()
+    conn.execute('INSERT INTO audit_log (user_id, action, details) VALUES (?, ?, ?)',
+                 (user_id, action, details))
+    conn.commit()
     conn.close()
 
 def login_required(f):
@@ -82,6 +92,7 @@ def login():
             session['username'] = user['username']
             session['full_name'] = user['full_name']
             session['role'] = user['role']
+            log_action(user['username'], 'LOGIN', f'تم تسجيل الدخول بنجاح من {request.remote_addr}')
             flash(f'مرحباً بك، {user["full_name"]}!', 'success')
             return redirect(url_for('index'))
         else:
@@ -93,6 +104,7 @@ def login():
 @login_required
 def logout():
     """تسجيل الخروج"""
+    log_action(session['username'], 'LOGOUT', 'تم تسجيل الخروج')
     session.pop('logged_in', None)
     session.pop('username', None)
     session.pop('full_name', None)
@@ -128,6 +140,7 @@ def add_truck():
                          (plate_number, model, year, status))
             conn.commit()
             conn.close()
+            log_action(session['username'], 'ADD_TRUCK', f'إضافة قاطرة جديدة: {plate_number} - {model}')
             flash('تمت إضافة القاطرة بنجاح.', 'success')
             return redirect(url_for('trucks'))
         except sqlite3.IntegrityError:
@@ -160,6 +173,7 @@ def add_driver():
                          (username, hash_password(password), full_name, signature, phone, license_number, address, salary))
             conn.commit()
             conn.close()
+            log_action(session['username'], 'ADD_DRIVER', f'إضافة سائق جديد: {full_name} ({username})')
             flash(f'تمت إضافة السائق ({full_name}) بنجاح.', 'success')
             return redirect(url_for('index')) # يمكن توجيهه لصفحة قائمة السائقين لاحقاً
         except sqlite3.IntegrityError:
@@ -196,12 +210,82 @@ def add_shipment():
                          (truck_id, driver_username, origin, destination, load_weight, revenue, start_date))
             conn.commit()
             conn.close()
+            log_action(session['username'], 'ADD_SHIPMENT', f'بدء شحنة جديدة: من {origin} إلى {destination}، القاطرة: {truck_id}')
             flash('تمت إضافة الشحنة بنجاح وبدء الرحلة.', 'success')
             return redirect(url_for('index'))
         except Exception as e:
             flash(f'حدث خطأ: {e}', 'danger')
 
     return render_template('add_shipment.html', trucks=trucks_list, drivers=drivers_list)
+
+# --- مسارات إدارة الصيانة ---
+
+@app.route('/maintenance/add', methods=['GET', 'POST'])
+@login_required
+@role_required(['admin', 'manager'])
+def add_maintenance():
+    """إضافة صيانة جديدة"""
+    conn = get_db_connection()
+    trucks_list = conn.execute('SELECT id, plate_number FROM trucks').fetchall()
+    conn.close()
+    
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    if request.method == 'POST':
+        truck_id = request.form['truck_id']
+        date = request.form['date']
+        type = request.form['type']
+        cost = request.form['cost']
+        description = request.form['description']
+        
+        try:
+            conn = get_db_connection()
+            conn.execute('INSERT INTO maintenance (truck_id, date, type, cost, description) VALUES (?, ?, ?, ?, ?)',
+                         (truck_id, date, type, cost, description))
+            conn.commit()
+            conn.close()
+            log_action(session['username'], 'ADD_MAINTENANCE', f'تسجيل صيانة: {type} للقاطرة {truck_id} بتكلفة {cost}')
+            flash('تم تسجيل الصيانة بنجاح.', 'success')
+            return redirect(url_for('index'))
+        except Exception as e:
+            flash(f'حدث خطأ: {e}', 'danger')
+            
+    return render_template('add_maintenance.html', trucks=trucks_list, today=today)
+
+# --- مسارات إدارة الوقود ---
+
+@app.route('/fuel/add', methods=['GET', 'POST'])
+@login_required
+@role_required(['admin', 'manager'])
+def add_fuel():
+    """إضافة تعبئة وقود جديدة"""
+    conn = get_db_connection()
+    trucks_list = conn.execute('SELECT id, plate_number FROM trucks').fetchall()
+    conn.close()
+    
+    today = datetime.now().strftime('%Y-%m-%d')
+    
+    if request.method == 'POST':
+        truck_id = request.form['truck_id']
+        date = request.form['date']
+        liters = request.form['liters']
+        cost = request.form['cost']
+        station = request.form['station']
+        odometer = request.form.get('odometer')
+        
+        try:
+            conn = get_db_connection()
+            conn.execute('INSERT INTO fuel (truck_id, date, liters, cost, station, odometer) VALUES (?, ?, ?, ?, ?, ?)',
+                         (truck_id, date, liters, cost, station, odometer if odometer else None))
+            conn.commit()
+            conn.close()
+            log_action(session['username'], 'ADD_FUEL', f'تسجيل وقود: {liters} لتر للقاطرة {truck_id} بتكلفة {cost}')
+            flash('تم تسجيل الوقود بنجاح.', 'success')
+            return redirect(url_for('index'))
+        except Exception as e:
+            flash(f'حدث خطأ: {e}', 'danger')
+            
+    return render_template('add_fuel.html', trucks=trucks_list, today=today)
 
 # --- مسارات إدارة المصاريف ---
 
@@ -229,6 +313,7 @@ def add_expense():
                          (expense_date, category, amount, description, truck_id if truck_id else None))
             conn.commit()
             conn.close()
+            log_action(session['username'], 'ADD_EXPENSE', f'تسجيل مصروف: {category} بمبلغ {amount}')
             flash('تم تسجيل المصروف بنجاح.', 'success')
             return redirect(url_for('index'))
         except Exception as e:
@@ -269,6 +354,65 @@ def reports():
     }
     
     return render_template('reports.html', data=report_data)
+
+# --- مسارات سجل المعاملات (Audit Log) ---
+
+@app.route('/audit-log')
+@login_required
+@role_required(['admin', 'manager'])
+def audit_log():
+    """عرض سجل المعاملات"""
+    return render_template('audit_log.html')
+
+@app.route('/api/audit-log')
+@login_required
+@role_required(['admin', 'manager'])
+def get_audit_log():
+    """API لجلب سجل المعاملات"""
+    conn = get_db_connection()
+    logs = conn.execute('SELECT * FROM audit_log ORDER BY timestamp DESC LIMIT 100').fetchall()
+    conn.close()
+    return jsonify([dict(log) for log in logs])
+
+@app.route('/api/audit-log/search')
+@login_required
+@role_required(['admin', 'manager'])
+def search_audit_log():
+    """API للبحث في سجل المعاملات"""
+    query = request.args.get('q', '')
+    conn = get_db_connection()
+    logs = conn.execute('''
+        SELECT * FROM audit_log 
+        WHERE action LIKE ? OR details LIKE ? OR user_id LIKE ?
+        ORDER BY timestamp DESC LIMIT 100
+    ''', (f'%{query}%', f'%{query}%', f'%{query}%')).fetchall()
+    conn.close()
+    return jsonify([dict(log) for log in logs])
+
+@app.route('/api/export/audit-log')
+@login_required
+@role_required(['admin', 'manager'])
+def export_audit_log():
+    """API لتصدير سجل المعاملات إلى CSV"""
+    conn = get_db_connection()
+    logs = conn.execute('SELECT timestamp, user_id, action, details FROM audit_log ORDER BY timestamp DESC').fetchall()
+    conn.close()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow(['التاريخ والوقت', 'المستخدم', 'العملية', 'التفاصيل'])
+    
+    for log in logs:
+        writer.writerow(log)
+    
+    output.seek(0)
+    return app.response_class(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={'Content-Disposition': f'attachment;filename=audit-log-{datetime.now().strftime("%Y-%m-%d")}.csv'}
+    )
+
 
 # --- تشغيل التطبيق ---
 if __name__ == '__main__':
